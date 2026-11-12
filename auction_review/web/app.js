@@ -51,7 +51,7 @@ function pct(change, goodWhenUp = false) {
 }
 
 function itemName(r) {
-  const q = r.quality ?? 1;
+  const q = Number.isInteger(r.quality) ? r.quality : 1;
   return `<span class="${r.named ? "q" + q : "unnamed"}" title="${esc(r.item_key)}">${esc(r.name)}</span>`;
 }
 

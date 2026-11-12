@@ -113,5 +113,20 @@ class AuctionatorTest(unittest.TestCase):
             conn.close()
 
 
+class NamesTest(unittest.TestCase):
+    def test_quality_is_stored_only_as_an_integer(self):
+        from auction_review import names
+        with tempfile.TemporaryDirectory() as d:
+            conn = store.connect(Path(d) / "t.db")
+            try:
+                names._upsert(conn, [(1, "A", 3, None), (2, "B", '"><img src=x>', None),
+                                     (3, "C", b"x", None), (4, "D", 2.5, None), (5, "E", True, None)],
+                              "wowhead")
+                got = dict(conn.execute("SELECT item_id, quality FROM items"))
+            finally:
+                conn.close()
+        self.assertEqual(got, {1: 3, 2: None, 3: None, 4: None, 5: None})
+
+
 if __name__ == "__main__":
     unittest.main()

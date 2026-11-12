@@ -30,7 +30,8 @@ def _upsert(conn, rows, source):
     now = int(time.time())
     existing = {r["item_id"]: r["source"] for r in conn.execute("SELECT item_id, source FROM items")}
     rank = _SOURCE_RANK[source]
-    todo = [(i, n, q, ic, source, now) for i, n, q, ic in rows
+    # quality ends up in an HTML class name on the dashboard, so only ever store a plain integer
+    todo = [(i, n, q if type(q) is int else None, ic, source, now) for i, n, q, ic in rows
             if _SOURCE_RANK.get(existing.get(i), 0) <= rank]
     conn.executemany(
         """INSERT INTO items (item_id, name, quality, icon, source, updated_at) VALUES (?,?,?,?,?,?)
