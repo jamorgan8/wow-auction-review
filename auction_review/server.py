@@ -122,8 +122,20 @@ def make_handler(app: App):
             n = int(self.headers.get("Content-Length") or 0)
             return json.loads(self.rfile.read(n) or b"{}")
 
+        def _host_ok(self):
+            # Reject requests whose Host isn't a loopback name. This defeats DNS rebinding,
+            # where a malicious site points its own domain at 127.0.0.1 to read this server.
+            port = self.server.server_address[1]
+            allowed = {f"127.0.0.1:{port}", f"localhost:{port}", f"[::1]:{port}"}
+            if self.headers.get("Host", "").lower() in allowed:
+                return True
+            self._json({"error": "forbidden host"}, HTTPStatus.FORBIDDEN)
+            return False
+
         def _local_only(self):
             # Block cross-site requests from other web pages to this local server.
+            if not self._host_ok():
+                return False
             origin = self.headers.get("Origin")
             host = self.headers.get("Host", "")
             if origin and urlparse(origin).netloc != host:
@@ -131,7 +143,13 @@ def make_handler(app: App):
                 return False
             return True
 
+        def do_HEAD(self):
+            if self._host_ok():
+                super().do_HEAD()
+
         def do_GET(self):
+            if not self._host_ok():
+                return
             url = urlparse(self.path)
             if not url.path.startswith("/api/"):
                 return super().do_GET()
