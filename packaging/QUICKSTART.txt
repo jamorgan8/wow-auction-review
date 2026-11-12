@@ -1,0 +1,29 @@
+AUCTION REVIEW - QUICK START
+============================
+
+A price-trend dashboard for the World of Warcraft auction house, built on the
+data the Auctionator addon saves. Everything runs on your own PC.
+
+YOU NEED
+  - The Auctionator addon installed in WoW.
+  - At least one auction house scan with Auctionator, then log out or type /reload
+    (WoW only saves addon data when you log out or /reload).
+
+START
+  1. Unzip this folder anywhere (e.g. your Desktop).
+  2. Double-click AuctionReview.exe. Your browser opens the dashboard.
+     - Windows may show "Windows protected your PC" because the app isn't signed.
+       Click "More info", then "Run anyway".
+     - If it can't find WoW, it asks you to pick your World of Warcraft folder.
+  3. Leave the black window open while you play. It picks up new data each time
+     you /reload or log out. Close the window to stop it.
+
+ITEM NAMES (recommended)
+  The dashboard shows item IDs until it knows names. Click "Install addon" on the
+  dashboard, or copy the AuctionReviewNames folder from this zip into
+    World of Warcraft\<_retail_ / _classic_ / ...>\Interface\AddOns
+  Then log in, wait about a minute, and type /reload.
+
+YOUR DATA
+  Price history is kept in %LOCALAPPDATA%\AuctionReview and keeps growing past
+  Auctionator's 21-day limit. Delete that folder to start over.

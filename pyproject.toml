@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auction-review"
+dynamic = ["version"]
+description = "Local dashboard for World of Warcraft auction house price trends, built on Auctionator's saved data"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: MacOS",
+    "Topic :: Games/Entertainment",
+]
+
+[project.scripts]
+auction-review = "auction_review.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/jamorgan8/wow-auction-review"
+
+[tool.setuptools]
+packages = ["auction_review"]
+include-package-data = false
+
+[tool.setuptools.dynamic]
+version = { attr = "auction_review.__version__" }
+
+[tool.setuptools.package-data]
+auction_review = [
+    "web/*",
+    "web/vendor/*",
+    "addon/AuctionReviewNames/*",
+]

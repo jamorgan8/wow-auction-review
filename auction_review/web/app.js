@@ -419,13 +419,65 @@ async function loadOverview() {
     `<span>Names: <b>${ov.items_named.toLocaleString()}/${ov.items_total.toLocaleString()}</b>${st.names_running ? " (looking up…)" : ""}</span>`,
     st.message && st.message !== "ok" ? `<span class="alert-above">${esc(st.message)}</span>` : "",
   ].join("");
+  if (!ov.needs_setup) {
+    $("#status").insertAdjacentHTML("beforeend", `<span><a href="#/setup">Change WoW folder</a> · v${esc(ov.version)}</span>`);
+  }
   const banner = $("#banner");
-  if (!ov.names_file_found && ov.items_named < ov.items_total * 0.9) {
-    banner.innerHTML = `Many items show as “Item 12345”. For names of every item (including new WoW Forever items),
-      install the companion addon: run <code>python -m auction_review install-addon</code>, start WoW,
-      wait a minute, then <code>/reload</code>. Names appear here automatically.`;
+  if (!ov.needs_setup && !ov.names_file_found && ov.items_named < ov.items_total * 0.9) {
+    banner.innerHTML = ov.addon_installed
+      ? `The <b>Auction Review Names</b> addon is installed. Log in to WoW (make sure the addon is enabled),
+         wait about a minute, then type <code>/reload</code>. Item names will appear here automatically.`
+      : `Many items show as “Item 12345”. To see the name of every item, install the small companion addon
+         that reads names from the game. <button class="btn primary" id="install-addon">Install addon</button>`;
     banner.hidden = false;
+    $("#install-addon")?.addEventListener("click", async (e) => {
+      e.target.disabled = true;
+      try {
+        await api("install-addon", { method: "POST" });
+        await loadOverview();
+      } catch (err) {
+        e.target.disabled = false;
+        banner.insertAdjacentHTML("beforeend", `<div class="alert-above">${esc(err.message)}</div>`);
+      }
+    });
   } else banner.hidden = true;
+}
+
+async function viewSetup() {
+  const data = await api("setup");
+  const list = data.candidates.length
+    ? `<p class="hint">Found Auctionator data here — click one to use it:</p>
+       <div class="setup-list">${data.candidates.map((c) =>
+         `<button class="btn setup-pick ${c === data.current ? "primary" : ""}" data-path="${esc(c)}">${esc(c)}</button>`).join("")}</div>`
+    : `<p class="hint">No Auctionator data was found in the usual install locations.</p>`;
+  view.innerHTML = `
+    <div class="panel setup">
+      <h1>Where is World of Warcraft installed?</h1>
+      <p class="hint">Auction Review reads the price data that the <b>Auctionator</b> addon saves. You need Auctionator
+        installed, at least one auction house scan, and a logout or <code>/reload</code> so WoW writes the file.</p>
+      ${list}
+      <p class="hint">Or paste your World of Warcraft folder (the one that contains <code>_retail_</code>,
+        <code>_classic_</code>, etc.). Find it in the Battle.net app under the game's ⚙ menu → <i>Show in Explorer</i>.</p>
+      <div class="watch-form">
+        <input class="field setup-path" type="text" id="setup-path" placeholder="C:\\Program Files (x86)\\World of Warcraft">
+        <button class="btn primary" id="setup-go">Use this folder</button>
+      </div>
+      <p class="hint" id="setup-msg" style="margin-top:10px"></p>
+    </div>`;
+  const choose = async (path) => {
+    $("#setup-msg").textContent = "Reading auction data…";
+    try {
+      const res = await api("setup", { method: "POST", body: { path } });
+      $("#setup-msg").textContent = `Using ${res.file}`;
+      await loadOverview();
+      location.hash = "#/movers";
+    } catch (err) {
+      $("#setup-msg").innerHTML = `<span class="alert-above">${esc(err.message)}</span>`;
+    }
+  };
+  view.querySelectorAll(".setup-pick").forEach((b) => b.addEventListener("click", () => choose(b.dataset.path)));
+  $("#setup-go").addEventListener("click", () => choose($("#setup-path").value));
+  $("#setup-path").addEventListener("keydown", (e) => { if (e.key === "Enter") choose(e.target.value); });
 }
 
 async function route() {
@@ -434,6 +486,7 @@ async function route() {
   const [, tab, arg] = hash.match(/^#\/([^/]+)\/?(.*)$/) || [, "movers"];
   document.querySelectorAll("#tabs a").forEach((a) => a.classList.toggle("active", a.dataset.tab === tab));
   try {
+    if (tab === "setup" || state.overview?.needs_setup) return await viewSetup();
     if (!state.overview?.realms.length) {
       view.innerHTML = `<div class="empty-state">No auction data yet. Scan the auction house with Auctionator,
         then <b>/reload</b> or log out so WoW saves the file.</div>`;

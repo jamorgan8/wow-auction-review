@@ -148,6 +148,12 @@ td.item { max-width: 380px; overflow: hidden; text-overflow: ellipsis; }
 .alert-below { color: var(--down); font-weight: 600; }
 .alert-above { color: var(--up); font-weight: 600; }
 canvas.spark { width: 110px; height: 26px; display: block; }
+.setup { max-width: 760px; }
+.setup h1 { font-size: 18px; margin: 0 0 10px; }
+.setup-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.setup-list .btn { text-align: left; overflow-wrap: anywhere; }
+.watch-form input.setup-path { width: min(520px, 100%); }
+.banner .btn { margin-left: 8px; padding: 4px 10px; }
 
 @media (max-width: 800px) {
   .topbar { flex-wrap: wrap; padding: 10px 16px; }

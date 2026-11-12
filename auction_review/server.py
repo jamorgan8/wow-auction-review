@@ -11,25 +11,29 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
 
-from . import analysis, names, store
-from .paths import names_file_for
+from . import __version__, analysis, names, paths, store
+from .paths import WEB_DIR, names_file_for
 
 log = logging.getLogger(__name__)
-WEB_DIR = Path(__file__).resolve().parent / "web"
 
 
 class App:
     """Shared state: the watched file plus background ingest / name lookups."""
 
-    def __init__(self, auctionator_file: Path, web_names: bool = True, poll_seconds: int = 20):
-        self.file = auctionator_file
-        self.names_file = names_file_for(auctionator_file)
+    def __init__(self, auctionator_file: Path | None, web_names: bool = True, poll_seconds: int = 20):
+        self.file = None
+        self.names_file = None
+        self.set_file(auctionator_file)
         self.web_names = web_names
         self.poll_seconds = poll_seconds
         self.lock = threading.Lock()
         self.stop = threading.Event()
         self.status = {"last_check": None, "last_ingest": None, "message": "starting", "names_running": False}
         self._seen = {}
+
+    def set_file(self, auctionator_file: Path | None):
+        self.file = Path(auctionator_file) if auctionator_file else None
+        self.names_file = names_file_for(self.file) if self.file else None
 
     def _mtime(self, p: Path):
         try:
@@ -40,6 +44,9 @@ class App:
 
     def refresh(self, force=False) -> list[dict]:
         """Ingest Auctionator data and addon names if either file changed."""
+        if self.file is None:
+            self.status["message"] = "setup needed"
+            return []
         with self.lock:
             results = []
             conn = store.connect()
@@ -162,9 +169,15 @@ def make_handler(app: App):
                 if route == "overview":
                     data = analysis.overview(conn)
                     data["status"] = app.status
-                    data["file"] = str(app.file)
-                    data["names_file_found"] = app.names_file.is_file()
+                    data["version"] = __version__
+                    data["needs_setup"] = app.file is None
+                    data["file"] = str(app.file) if app.file else None
+                    data["names_file_found"] = bool(app.names_file and app.names_file.is_file())
+                    data["addon_installed"] = bool(app.file and paths.addon_installed(app.file))
                     return self._json(data)
+                if route == "setup":
+                    return self._json({"current": str(app.file) if app.file else None,
+                                       "candidates": [str(p) for p in paths.all_candidates()]})
                 if route == "movers":
                     return self._json(analysis.movers(
                         conn, realm, window=_int(qs, "window", 7), min_prior_days=_int(qs, "min_days", 1),
@@ -200,6 +213,22 @@ def make_handler(app: App):
             try:
                 if route == "/api/refresh":
                     return self._json({"results": app.refresh(force=True)})
+                if route == "/api/setup":
+                    raw = str(self._body().get("path") or "").strip().strip('"')
+                    found = paths.candidates_under(Path(raw)) if raw else []
+                    if not found:
+                        return self._json({"error": "No Auctionator data found there. Pick your World of Warcraft "
+                                                    "folder, and make sure you've scanned the auction house with "
+                                                    "Auctionator and logged out or typed /reload at least once."},
+                                          HTTPStatus.BAD_REQUEST)
+                    paths.set_auctionator_file(found[0])
+                    app.set_file(found[0])
+                    return self._json({"file": str(found[0]), "results": app.refresh(force=True)})
+                if route == "/api/install-addon":
+                    if app.file is None:
+                        return self._json({"error": "Set up your WoW folder first."}, HTTPStatus.BAD_REQUEST)
+                    dest = paths.install_addon(app.file)
+                    return self._json({"installed_to": str(dest)})
                 if route == "/api/watchlist":
                     b = self._body()
                     conn = store.connect()
@@ -229,15 +258,25 @@ def make_handler(app: App):
     return Handler
 
 
-def serve(auctionator_file: Path, port=8765, open_browser=True, web_names=True):
+def serve(auctionator_file: Path | None, port=8765, open_browser=True, web_names=True):
     app = App(auctionator_file, web_names=web_names)
-    print(f"Watching {auctionator_file}")
-    for r in app.refresh(force=True):
-        print(f"  {r['status']}: {r['file']}")
-    threading.Thread(target=app.watch, daemon=True, name="watcher").start()
-
-    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(app))
+    print(f"Auction Review {__version__}")
+    if auctionator_file:
+        print(f"Watching {auctionator_file}")
+        for r in app.refresh(force=True):
+            print(f"  {r['status']}: {r['file']}")
+    else:
+        print("Couldn't find Auctionator data automatically - choose your WoW folder in the dashboard.")
+    print(f"Data folder: {paths.DATA_DIR}")
     url = f"http://127.0.0.1:{port}/"
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(app))
+    except OSError:
+        print(f"Port {port} is already in use - Auction Review is probably already running. Opening {url}")
+        if open_browser:
+            webbrowser.open(url)
+        return
+    threading.Thread(target=app.watch, daemon=True, name="watcher").start()
     print(f"Dashboard running at {url}  (Ctrl+C to stop)")
     if open_browser:
         threading.Timer(0.5, webbrowser.open, (url,)).start()
