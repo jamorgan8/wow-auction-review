@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auction Review</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◆</span>
+      <span>Auction Review</span>
+    </div>
+    <div class="search">
+      <input id="search" type="search" placeholder="Search items by name or ID…" autocomplete="off">
+      <div id="search-results" class="search-results" hidden></div>
+    </div>
+    <div class="top-actions">
+      <select id="realm" title="Realm"></select>
+      <button id="refresh" class="btn" title="Re-read Auctionator.lua now">Refresh data</button>
+    </div>
+  </header>
+
+  <div id="status" class="statusbar"></div>
+  <div id="banner" class="banner" hidden></div>
+
+  <nav class="tabs" id="tabs">
+    <a href="#/movers" data-tab="movers">Price movers</a>
+    <a href="#/supply" data-tab="supply">Supply</a>
+    <a href="#/vendor" data-tab="vendor">Vendor resale</a>
+    <a href="#/watchlist" data-tab="watchlist">Watchlist</a>
+    <a href="#/postings" data-tab="postings">My postings</a>
+  </nav>
+
+  <main id="view"></main>
+
+  <script src="app.js"></script>
+</body>
+</html>

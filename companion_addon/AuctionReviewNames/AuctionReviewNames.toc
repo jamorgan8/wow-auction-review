@@ -1,0 +1,9 @@
+## Interface: 120100, 120105, 16001, 50504, 38000, 20506, 11508, 11509
+## Title: Auction Review Names
+## Notes: Saves item and pet names for everything in Auctionator's price database, for the Auction Review dashboard.
+## Author: Auction Review
+## Version: 1.0
+## OptionalDeps: Auctionator
+## SavedVariables: AUCTION_REVIEW_ITEM_NAMES, AUCTION_REVIEW_PET_NAMES
+
+Main.lua
