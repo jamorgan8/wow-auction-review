@@ -27,3 +27,7 @@ ITEM NAMES (recommended)
 YOUR DATA
   Price history is kept in %LOCALAPPDATA%\AuctionReview and keeps growing past
   Auctionator's 21-day limit. Delete that folder to start over.
+
+DISCLAIMER
+  Unofficial fan project, provided as-is. Not made, endorsed or supported by
+  Blizzard Entertainment, the authors of Auctionator, or Wowhead.

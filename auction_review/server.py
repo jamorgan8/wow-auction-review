@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 class App:
     """Shared state: the watched file plus background ingest / name lookups."""
 
-    def __init__(self, auctionator_file: Path | None, web_names: bool = True, poll_seconds: int = 20):
+    def __init__(self, auctionator_file: Path | None, web_names: bool = False, poll_seconds: int = 20):
         self.file = None
         self.names_file = None
         self.set_file(auctionator_file)
@@ -258,7 +258,7 @@ def make_handler(app: App):
     return Handler
 
 
-def serve(auctionator_file: Path | None, port=8765, open_browser=True, web_names=True):
+def serve(auctionator_file: Path | None, port=8765, open_browser=True, web_names=False):
     app = App(auctionator_file, web_names=web_names)
     print(f"Auction Review {__version__}")
     if auctionator_file:

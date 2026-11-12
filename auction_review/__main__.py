@@ -39,7 +39,10 @@ def main(argv=None):
     s = sub.add_parser("serve", help="run the dashboard (default)")
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--no-browser", action="store_true")
-    s.add_argument("--no-web-names", action="store_true", help="don't look up item names on Wowhead")
+    s.add_argument("--web-names", action="store_true",
+                   help="also look up missing item names on Wowhead (off by default; the companion addon "
+                        "is the recommended name source)")
+    s.add_argument("--no-web-names", action="store_true", help=argparse.SUPPRESS)  # old flag, now the default
     sub.add_parser("ingest", help="import the current Auctionator data once")
     sub.add_parser("status", help="show what's in the history database")
     sub.add_parser("install-addon", help="copy the AuctionReviewNames addon into WoW's AddOns folder")
@@ -53,7 +56,7 @@ def main(argv=None):
         from .server import serve
         serve(_file(args, required=False), port=getattr(args, "port", 8765),
               open_browser=not getattr(args, "no_browser", False),
-              web_names=not getattr(args, "no_web_names", False))
+              web_names=getattr(args, "web_names", False))
         return
 
     f = _file(args)

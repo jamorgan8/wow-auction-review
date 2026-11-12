@@ -17,7 +17,10 @@ You need the **Auctionator** addon, at least one AH scan, and a logout or `/relo
    [latest release](https://github.com/jamorgan8/wow-auction-review/releases/latest) and unzip it.
 2. Double-click `AuctionReview.exe`. The dashboard opens in your browser.
    Windows may say it "protected your PC" because the app isn't code-signed: click
-   **More info → Run anyway**.
+   **More info → Run anyway**. Some antivirus tools also flag unsigned Python-built apps by
+   mistake. To confirm your download is the file GitHub built, compare its SHA-256 with the
+   one in the release notes: `certutil -hashfile AuctionReview-<version>-windows.zip SHA256`.
+   If you'd rather not run an exe, use the Python install below.
 3. If WoW isn't found automatically, the dashboard asks for your World of Warcraft folder.
 4. Click **Install addon** on the dashboard to add the companion name addon (see below).
 
@@ -50,7 +53,8 @@ Auctionator stores item IDs only. Names come from, best first:
    release zip into `Interface\AddOns`. Log in, wait about a minute, then `/reload`.
    `/arnames` in game shows progress.
 2. Item links found in your other SavedVariables files.
-3. Wowhead lookups in the background (classic-era items only; turn off with `--no-web-names`).
+3. Optional: Wowhead lookups for items still unnamed, if you start with `--web-names`. Off by
+   default; it only knows items that exist on Wowhead, and sends nothing but item IDs.
 
 ## Dashboard tabs
 
@@ -80,7 +84,7 @@ companion addon's, and only when you ask it to install them.
 ## Commands
 
 ```
-auction-review [serve] [--port 8765] [--no-browser] [--no-web-names]
+auction-review [serve] [--port 8765] [--no-browser] [--web-names]
 auction-review ingest            # import once, no server
 auction-review status            # summary + top movers in the terminal
 auction-review install-addon
@@ -117,3 +121,9 @@ GitHub Actions runs the tests, builds the exe on Windows, and publishes a GitHub
 zip attached. The workflow fails if the tag doesn't match `__version__`.
 
 Bundled: [Chart.js](https://www.chartjs.org) 4.4.1 (MIT, see `auction_review/web/vendor/LICENSE-chartjs.txt`).
+
+## Disclaimer
+
+Auction Review is an unofficial fan project, provided as-is. It is not made, endorsed or supported
+by Blizzard Entertainment, the authors of Auctionator, or Wowhead. World of Warcraft and Blizzard
+Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc.

@@ -15,8 +15,8 @@ jobs:
   test:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
       - name: Run tests
@@ -29,8 +29,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
 
@@ -52,8 +52,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/AuctionReview-*-windows.zip \
-            --title "Auction Review $GITHUB_REF_NAME" \
-            --notes "Download **AuctionReview-${GITHUB_REF_NAME#v}-windows.zip**, unzip it, and double-click AuctionReview.exe. See QUICKSTART.txt inside the zip.
+          zip="AuctionReview-${GITHUB_REF_NAME#v}-windows.zip"
+          sha=$(sha256sum "dist/$zip" | cut -d' ' -f1)
+          cat > notes.md <<EOF
+          Download **$zip**, unzip it, and double-click AuctionReview.exe. See QUICKSTART.txt inside the zip.
 
-          Windows may warn that the app is unrecognized because it isn't code-signed: click *More info* → *Run anyway*."
+          Windows may warn that the app is unrecognized because it isn't code-signed: click *More info* → *Run anyway*.
+          Some antivirus tools also flag unsigned Python-built apps by mistake. To confirm your download is the file
+          this workflow built, check its SHA-256 in PowerShell or Command Prompt:
+
+              certutil -hashfile $zip SHA256
+
+          It should print:
+
+              $sha
+
+          Prefer not to run an exe? Install with Python instead: \`pipx install git+https://github.com/${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}\`
+          EOF
+          gh release create "$GITHUB_REF_NAME" "dist/$zip" --title "Auction Review $GITHUB_REF_NAME" --notes-file notes.md
